@@ -77,3 +77,48 @@ SELECT user_id,product_id FROM (
                                 SELECT *,rank() over(PARTITION BY user_id ORDER by created_at DESC ) rnk 
                                 from t1 )a 
                                 WHERE rnk=1
+
+--8 What is a total order and amount spent each member before the become the member ? 
+
+WITH t1 AS(SELECT s.user_id,s.product_id,s.created_at 
+           FROM sales s 
+           join gold_user_signup g 
+           ON g.user_id=s.user_id 
+           WHERE g.gold_signup_date>s.created_at) 
+           
+SELECT t1.user_id,COUNT(p.product_id),SUM(p.price) 
+FROM t1 
+JOIN product p 
+ON p.product_id=t1.product_id 
+GROUP by t1.user_id 
+
+--9 If buying each product generates points for eg 5rs-2 zomato point and each product has different purchasing points 
+-- for eg for p1 5rs 1 zomato point, for p2 10rs-5zomato point and p3 5rs-1 zomato point I 
+
+-- a. which user have how many points ? 
+SELECT s.user_id,SUM(
+CASE 
+WHEN product_name = "p1" then price*0.2
+WHEN product_name = "p2" then price*0.5
+WHEN product_name = "p3" then price*0.2
+END) AS points
+FROM `product` p 
+JOIN sales s 
+ON p.product_id=s.product_id 
+GROUP BY s.user_id 
+
+--b. which product most point have been given till now 
+SELECT s.product_id,SUM(
+CASE 
+WHEN product_name = "p1" then price*0.2
+WHEN product_name = "p2" then price*0.5
+WHEN product_name = "p3" then price*0.2
+END) AS points
+FROM `product` p 
+JOIN sales s 
+ON p.product_id=s.product_id 
+GROUP BY s.product_id
+ORDER BY points DESC 
+LIMIT 1 
+
+-- 10 
