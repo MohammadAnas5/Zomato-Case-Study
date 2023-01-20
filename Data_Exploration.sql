@@ -121,4 +121,33 @@ GROUP BY s.product_id
 ORDER BY points DESC 
 LIMIT 1 
 
--- 10 
+-- 10.  In the first one year after a customer joins the gold program (including their join date) irrespective of what the customer
+-- has purchased they earn 5 zomato points for every 10 rs spent who earned more more 1 or 3 and what was their points earnings 
+-- in thier first yr ?
+
+WITH t1 AS (SELECT s.user_id,s.created_at,s.product_id 
+            FROM sales s 
+            JOIN gold_user_signup g ON s.user_id=g.user_id 
+            WHERE g.gold_signup_date<=s.created_at AND s.created_at<=DATE_ADD(g.gold_signup_date,INTERVAL 1 Year)  
+            ORDER BY s.created_at) 
+
+SELECT user_id,SUM(p.price),sum(p.price*0.5) points 
+FROM t1 
+JOIN product p 
+ON p.product_id=t1.product_id 
+GROUP by user_id
+   
+--11 Rank all the transaction 
+SELECT *,rank() over(PARTITION BY user_id ORDER BY created_at desc) 
+FROM sales 
+
+--12 rank all the transactions for each member whenever they are a zomato gold member for every non gold member transction mark as na ?  
+
+SELECT s.user_id,s.product_id,s.created_at,
+CASE
+WHEN g.gold_signup_date<s.created_at THEN rank() over(PARTITION BY s.user_id ORDER BY s.created_at desc)
+ELSE "na" 
+END AS rnk
+FROM sales s 
+JOIN gold_user_signup g 
+ON g.user_id=s.user_id
