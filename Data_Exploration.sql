@@ -46,7 +46,7 @@ SELECT user_id, COUNT(user_id) FROM t1 GROUP by user_id
 
 -- 5 Which item is most popular for each customer ? 
 
-# pertcular user buy perticular item how many times,
+-- pertcular user buy perticular item how many times,
 with t1 as (
   SELECT user_id,product_id,COUNT(product_id)cnt 
   FROM `sales` 
@@ -56,3 +56,24 @@ SELECT user_id, product_id
 FROM (SELECT *,rank() over(PARTITION by user_id ORDER BY cnt DESC) rnk 
       from t1)a 
       WHERE rnk=1
+
+--6 Which item was purchased first by the customer after the become a gold member ? 
+
+-- order placed after the gold membership taken by that perticular users
+WITH t1 AS(SELECT s.user_id,s.product_id,s.created_at 
+           FROM sales s join gold_user_signup g ON g.user_id=s.user_id WHERE g.gold_signup_date<=s.created_at)
+
+SELECT user_id,product_id FROM (SELECT *,rank() over(PARTITION BY user_id ORDER by created_at ) rnk from t1 )a WHERE rnk=1 
+
+--7 Which item was purchased just before they become a gold member ? 
+
+WITH t1 AS(SELECT s.user_id,s.product_id,s.created_at 
+           FROM sales s 
+           join gold_user_signup g 
+           ON g.user_id=s.user_id 
+           WHERE g.gold_signup_date>s.created_at)
+
+SELECT user_id,product_id FROM (
+                                SELECT *,rank() over(PARTITION BY user_id ORDER by created_at DESC ) rnk 
+                                from t1 )a 
+                                WHERE rnk=1
